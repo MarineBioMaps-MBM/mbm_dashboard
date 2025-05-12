@@ -1,5 +1,6 @@
 server <- function(input, output) {
   
+  
   # Factorize study regions
   unique_regions <- c("NCSR", "NCCSR", "SFBSR", "CCSR", "SCSR")
   mpas$study_regi <- factor(mpas$study_regi, levels = unique_regions)

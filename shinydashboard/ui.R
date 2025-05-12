@@ -94,7 +94,18 @@ body <- dashboardBody(
                          
                      ) # END disclaimer box 
                      
-                   ) # END second fluidRow
+                   ), # END second fluidRow
+                   
+                   fluidRow(
+                     box(width = NULL,
+                         title = tagList(icon("file-pdf"), strong("See the complete analysis:")),
+                         div(style = "text-align: center; padding-bottom: 20px;",  # Adds bottom padding
+                             tags$a("Download Full MBM Report", href = "mbm_report.pdf", target = "_blank", 
+                                    style = "color: white; background-color: #C4A9C2; padding: 10px 20px; border-radius: 5px; text-decoration: none;")
+                         )
+                     )
+                     
+                   ) # End third fluid row (pdf)
                    
             ) # END right-hand column
             
