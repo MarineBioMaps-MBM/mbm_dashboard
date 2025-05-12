@@ -8,6 +8,36 @@ This is the repository that houses the Shiny dashboard exhibiting a series of in
 
 ## Data Used:
 
+[California Department of Fish and Wildlife MPA Boundaries Shapefile](https://data.ca.gov/dataset/california-marine-protected-areas-ds582)
+
+[California Department of Fish and Wildlife Study Region Boundaries Shapefile](https://data.cnra.ca.gov/dataset/marine-life-protection-act-study-regions-r7-cdfw-ds3178)
+
+[Pacific Marine and Estuarine Partnership (PMEP) CMECS Nearshore Substrate Data](https://www.pacificfishhabitat.org/data/nearshore-cmecs-substrate-habitat/)
+
+[Pacific Marine and Estuarine Partnership (PMEP) CMECS Nearshore Biotic Habitat Data](https://www.pacificfishhabitat.org/data/nearshore-cmecs-biotic-habitat/)
+
 ## File Contents:
 
+Global.R, server.R, and ui.R work together to build the Shiny App style dashboard, while the contents of the www and scratch folders help to provide customization and detail. Files found in the text folder provide descriptive text throughout the dashboard. 
+
 ## Repository Structure:
+
+```bash
+├── shinydashboard/
+│   ├── data/
+│   ├── global.R
+│   ├── server.R
+│   ├── text/
+│   │   ├── citation.md
+│   │   ├── disclaimer.md
+│   │   ├── intro.md
+│   ├── ui.R
+│   ├── www/
+│   │   ├── bigkelplei.jpg
+│   │   ├── custom-font.css
+│   │   ├── dolphinslei.jpg
+├── scratch/
+│   └── create-fresh-theme.R
+├── README.md
+└── .gitignore
+```
