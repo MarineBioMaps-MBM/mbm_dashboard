@@ -9,6 +9,9 @@ server <- function(input, output) {
   custom_colors <- c("#C4A9C2", "#71D9B0", "#D8C397", "#6EA1C8", "#796655")
   pal <- colorFactor(palette = custom_colors, domain = unique_regions)
   
+  pal_type <- colorFactor(palette = "Set3", domain = mpas$type)
+  
+  
   # Filter for regional mpas
   ncsr_mpas <- mpas |> 
     filter(study_regi == "NCSR")
@@ -31,27 +34,39 @@ server <- function(input, output) {
     # leaflet map
     leaflet() |> 
       addProviderTiles(providers$CartoDB.Positron) |> 
-      setView(lng = -119.6989, lat = 34.4203, zoom = 6) |> 
+      setView(lng = -119.6989, lat = 34.4203, zoom = 7) |> 
       addMiniMap(toggleDisplay = TRUE, minimized = FALSE) |> 
       addPolygons(data = sr_boundaries,
                   color = ~pal(study_regi), # Assign colors based on study_region
-                  weight = 3,
+                  fillOpacity =  0,
+                  weight = 1,
                   popup = paste0("Study Region Name:  ", sr_boundaries$name, "<br>",
                                  "Study Region Abbreviation:  ", sr_boundaries$study_regi, "<br>")) |> 
       addPolygons(data = mpas,
-                  color = "darkgoldenrod", # Assign colors based on study_region
-                  weight = 3,
+                  fillColor = ~pal_type(type),
+                  fillOpacity =  0.7,
+                  color = "black", # Assign colors based on study_region
+                  weight = 1,
                   popup = paste0("MPA Name:  ", mpas$shortname, "<br>",
                                  "MPA Type:  ", mpas$type, "<br>",
                                  "Study Region:  ", mpas$study_regi)) |>  
+      # addLegend(position = "topright",
+      #           pal = pal,
+      #           values = mpas$study_regi,
+      #           title = "MPA Study Region"
+      # ) |> 
       addLegend(position = "topright",
-                pal = pal,
-                values = mpas$study_regi,
-                title = "MPA Study Region",
-      ) 
+                pal = pal_type,
+                values = mpas$type,
+                title = "MPA Type")
     
       
     })
+  
+  
+  
+  ## BEGIN REGIONAL MAPS
+  
   
   # Reactive expression to determine which dataset to use
   selected_map_data <- reactive({
@@ -59,47 +74,71 @@ server <- function(input, output) {
     
     switch(input$ncsr_mapchoice_input,
            "MPA Boundaries" = ncsr_mpas,  # Default 
-           "Biota" = biota_data,          # Replace with actual dataset
-           "Substrate" = ncsr_substrate,  
-           "Depth Zone" = depth_data,     # Replace with actual dataset
-           "Estuary" = estuary_data        # Replace with actual dataset
+           "Substrate" = ncsr_substrate  
+
     )
   })
   
-  # Reactive expression to determine color palette
   selected_palette <- reactive({
     req(input$ncsr_mapchoice_input)
     
     if (input$ncsr_mapchoice_input == "Substrate") {
-      substrate_categories <- unique(ncsr_substrate$cmecs_sc_category)
       colorFactor(palette = c("#204035FF", "#4A7169FF", "#849383", "#BEB59CFF", "#998467", "#735231FF", "#49271BFF"), 
-                  domain = substrate_categories)
-    } else {
-      colorFactor(palette = "goldenrod", domain = selected_map_data()$type)  # Default color
-    }
+                  domain = ncsr_substrate$cmecs_sc_category)
+    } else if (input$ncsr_mapchoice_input == "MPA Boundaries") {
+      colorFactor(palette = "Set3", 
+                  domain = ncsr_mpas$type)
+    } 
   })
   
   
-  # Render Leaflet map dynamically
+  
   output$ncsr_map_output <- renderLeaflet({
     leaflet() |> 
       addProviderTiles(providers$CartoDB.Positron) |> 
-      setView(lng = -124.3917, lat = 40.4667, zoom = 8) |> 
+      setView(lng = -124.3917, lat = 40.4667, zoom = 7) |> 
       addMiniMap(toggleDisplay = TRUE, minimized = FALSE) |> 
-      addPolygons(data = selected_map_data(),  # Use reactive dataset
-                  color = ~selected_palette()(selected_map_data()$cmecs_sc_category), 
-                  weight = 2,
-                  fillOpacity = ifelse(input$ncsr_mapchoice_input == "Substrate", 1, 0),
-                  popup = paste0("MPA Name:  ", selected_map_data()$shortname, "<br>",
-                                 "Type:  ", selected_map_data()$type, "<br>",
-                                 "Study Region:  ", selected_map_data()$study_regi)) |> 
-      # Add legend dynamically
+      addPolygons(data = selected_map_data(),
+                  fillColor = ~selected_palette()(get(case_when(
+                    input$ncsr_mapchoice_input == "MPA Boundaries" ~ "type",
+                    input$ncsr_mapchoice_input == "Substrate" ~ "cmecs_sc_category"
+                  ), selected_map_data())),  
+                  
+                  fillOpacity = 0.7,
+                  color = "black",
+                  weight = 0.5
+                  # popup = ~paste0(
+                  #   "MPA Name: ", ifelse("shortname" %in% names(selected_map_data()), .data[["shortname"]], "N/A"), "<br>",
+                  #   "Type: ", ifelse("type" %in% names(selected_map_data()), .data[["type"]], "N/A"), "<br>",
+                  #   "Study Region: ", ifelse("study_regi" %in% names(selected_map_data()), .data[["study_regi"]], "N/A"), "<br>",
+                  #   "Details: ", ifelse("cmecs_sc_category" %in% names(selected_map_data()), .data[["cmecs_sc_category"]], "N/A")
+                    
+                  ) |>   
+      
       addLegend(position = "topright",
                 pal = selected_palette(),
-                values = selected_map_data()$cmecs_sc_category,
+                values = {
+                  column_name <- case_when(
+                    input$ncsr_mapchoice_input == "MPA Boundaries" ~ "type",
+                    input$ncsr_mapchoice_input == "Substrate" ~ "cmecs_sc_category"
+                  )
+                  if (!is.null(selected_map_data()) && column_name %in% names(selected_map_data())) {
+                    selected_map_data()[[column_name]]
+                  } else {
+                    character(0)  
+                  }
+                },
                 title = paste(input$ncsr_mapchoice_input, "Within MPAs"))
-    
   })
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
     
@@ -107,7 +146,7 @@ server <- function(input, output) {
     output$nccsr_map_output <- renderLeaflet({
       leaflet() |> 
         addProviderTiles(providers$CartoDB.Positron) |> 
-        setView(lng = -123.14, lat = 38.51, zoom = 8) |> 
+        setView(lng = -123.14, lat = 38.51, zoom = 7) |> 
         addMiniMap(toggleDisplay = TRUE, minimized = FALSE) |> 
         addPolygons(data = nccsr_mpas,
                     color = "darkgoldenrod", 
