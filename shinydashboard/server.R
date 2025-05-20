@@ -50,11 +50,7 @@ server <- function(input, output) {
                   popup = paste0("MPA Name:  ", mpas$shortname, "<br>",
                                  "MPA Type:  ", mpas$type, "<br>",
                                  "Study Region:  ", mpas$study_regi)) |>  
-      # addLegend(position = "topright",
-      #           pal = pal,
-      #           values = mpas$study_regi,
-      #           title = "MPA Study Region"
-      # ) |> 
+
       addLegend(position = "topright",
                 pal = pal_type,
                 values = mpas$type,
@@ -68,6 +64,12 @@ server <- function(input, output) {
   ## BEGIN REGIONAL MAPS
   
   
+  
+  
+  
+  ## NCSR
+  
+  
   # Reactive expression to determine which dataset to use
   selected_map_data <- reactive({
     req(input$ncsr_mapchoice_input)  # Ensure input is not NULL
@@ -79,6 +81,7 @@ server <- function(input, output) {
     )
   })
   
+  # Palettes
   selected_palette <- reactive({
     req(input$ncsr_mapchoice_input)
     
@@ -91,44 +94,50 @@ server <- function(input, output) {
     } 
   })
   
+  # Pop-ups
+  selected_map_data2 <- reactive({
+    df <- selected_map_data()
+    if (input$ncsr_mapchoice_input == "Substrate") {
+      df$popup_content <- paste0(
+        "<strong>MPA Name:</strong> ",      df$shortname,          "<br/>",
+        "<strong>Type:</strong> ",          df$type,               "<br/>",
+        "<strong>Study Region:</strong> ",  df$study_regi,         "<br/>",
+        "<strong>Component:</strong> ",     df$cmecs_sc_category
+      )
+    } else {
+      df$popup_content <- paste0(
+        "<strong>MPA Name:</strong> ",      df$shortname,          "<br/>",
+        "<strong>Type:</strong> ",          df$type,               "<br/>",
+        "<strong>Study Region:</strong> ",  df$study_regi
+      )
+    }
+    df
+  })
   
   
+  # Create reactive NCSR map
   output$ncsr_map_output <- renderLeaflet({
-    leaflet() |> 
-      addProviderTiles(providers$CartoDB.Positron) |> 
-      setView(lng = -124.3917, lat = 40.4667, zoom = 7) |> 
-      addMiniMap(toggleDisplay = TRUE, minimized = FALSE) |> 
-      addPolygons(data = selected_map_data(),
-                  fillColor = ~selected_palette()(get(case_when(
-                    input$ncsr_mapchoice_input == "MPA Boundaries" ~ "type",
-                    input$ncsr_mapchoice_input == "Substrate" ~ "cmecs_sc_category"
-                  ), selected_map_data())),  
-                  
-                  fillOpacity = 0.7,
-                  color = "black",
-                  weight = 0.5
-                  # popup = ~paste0(
-                  #   "MPA Name: ", ifelse("shortname" %in% names(selected_map_data()), .data[["shortname"]], "N/A"), "<br>",
-                  #   "Type: ", ifelse("type" %in% names(selected_map_data()), .data[["type"]], "N/A"), "<br>",
-                  #   "Study Region: ", ifelse("study_regi" %in% names(selected_map_data()), .data[["study_regi"]], "N/A"), "<br>",
-                  #   "Details: ", ifelse("cmecs_sc_category" %in% names(selected_map_data()), .data[["cmecs_sc_category"]], "N/A")
-                    
-                  ) |>   
-      
-      addLegend(position = "topright",
-                pal = selected_palette(),
-                values = {
-                  column_name <- case_when(
-                    input$ncsr_mapchoice_input == "MPA Boundaries" ~ "type",
-                    input$ncsr_mapchoice_input == "Substrate" ~ "cmecs_sc_category"
-                  )
-                  if (!is.null(selected_map_data()) && column_name %in% names(selected_map_data())) {
-                    selected_map_data()[[column_name]]
-                  } else {
-                    character(0)  
-                  }
-                },
-                title = paste(input$ncsr_mapchoice_input, "Within MPAs"))
+    df     <- selected_map_data2()
+    pal    <- selected_palette()
+    choice <- input$ncsr_mapchoice_input
+    
+    leaflet(df) %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      setView(lng = -124.3917, lat = 40.4667, zoom = 7) %>%
+      addMiniMap(toggleDisplay = TRUE, minimized = FALSE) %>%
+      addPolygons(
+        fillColor   = ~pal(get(ifelse(choice=="Substrate","cmecs_sc_category","type"), df)),
+        fillOpacity = 0.7,
+        color       = "black",
+        weight      = 0.5,
+        popup       = ~popup_content
+      ) %>%
+      addLegend(
+        position = "topright",
+        pal      = pal,
+        values   = if (choice=="Substrate") df$cmecs_sc_category else df$type,
+        title    = paste(choice, "Within MPAs")
+      )
   })
   
   
