@@ -136,6 +136,24 @@ body <- dashboardBody(
     tabItem(tabName = "ncsr",
             
             fluidRow(
+              # input box ----
+              box(width = 4,
+                  title = tags$strong("Select Habitat Component of Interest:"),
+                  
+                  pickerInput(inputId = "ncsr_mapchoice_input",  # Updated ID
+                              label = "Select one variable from the list",
+                              choices = c("MPA Boundaries",
+                                          "Biota",
+                                          "Substrate",
+                                          "Depth Zone",
+                                          "Estuary"),
+                              selected = "MPA Boundaries",  # Default selection
+                              multiple = FALSE,
+                              options = pickerOptions(actionsBox = TRUE)),
+                  
+                  
+                  
+              ), # END input box
               
               # Leaflet box ----
               box(width = 8,

@@ -14,5 +14,8 @@ mpas <- sf::st_read(file.path(boundary.dir, "California_Marine_Protected_Areas_[
   sf::st_transform('+proj=latlong +datum=WGS84') |> 
   sf::st_make_valid()
 
-
+# Read in ncsr substrate data
+rds.dir <- "/capstone/marinebiomaps/data/rds-files/"
+ncsr_substrate <- readRDS(file.path(rds.dir, "ncsr_substrate.rds")) |> 
+  sf::st_transform('+proj=latlong +datum=WGS84')
   
