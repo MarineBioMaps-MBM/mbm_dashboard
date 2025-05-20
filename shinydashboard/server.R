@@ -148,25 +148,89 @@ server <- function(input, output) {
   
   
   
-  
+  # NCCSR 
   
     
-    # Build nccsr leaflet map
-    output$nccsr_map_output <- renderLeaflet({
-      leaflet() |> 
-        addProviderTiles(providers$CartoDB.Positron) |> 
-        setView(lng = -123.14, lat = 38.51, zoom = 7) |> 
-        addMiniMap(toggleDisplay = TRUE, minimized = FALSE) |> 
-        addPolygons(data = nccsr_mpas,
-                    color = "darkgoldenrod", 
-                    weight = 2,
-                    fillOpacity = 0,     # No fill
-                    
-                    popup = paste0("MPA Name:  ", nccsr_mpas$shortname, "<br>",
-                                   "MPA Type:  ", nccsr_mpas$type, "<br>",
-                                   "Study Region:  ", nccsr_mpas$study_regi))
-      
-    }) 
+  # Reactive expression to determine which dataset to use
+  selected_map_data_nccsr <- reactive({
+    req(input$nccsr_mapchoice_input)  # Ensure input is not NULL
+    
+    switch(input$nccsr_mapchoice_input,
+           "MPA Boundaries" = nccsr_mpas,  # Default 
+           "Substrate" = nccsr_substrate  
+           
+    )
+  })
+  
+  # Palettes
+  selected_palette_nccsr <- reactive({
+    req(input$nccsr_mapchoice_input)
+    
+    if (input$nccsr_mapchoice_input == "Substrate") {
+      colorFactor(palette = c("#204035FF", "#4A7169FF", "#849383", "#BEB59CFF", "#998467", "#735231FF", "#49271BFF"), 
+                  domain = nccsr_substrate$cmecs_sc_category)
+    } else if (input$nccsr_mapchoice_input == "MPA Boundaries") {
+      colorFactor(palette = "Set3", 
+                  domain = nccsr_mpas$type)
+    } 
+  })
+  
+  # Pop-ups
+  selected_map_data2_nccsr <- reactive({
+    df_nccsr <- selected_map_data_nccsr()
+    if (input$nccsr_mapchoice_input == "Substrate") {
+      df_nccsr$popup_content <- paste0(
+        "<strong>MPA Name:</strong> ",      df_nccsr$shortname,          "<br/>",
+        "<strong>Type:</strong> ",          df_nccsr$type,               "<br/>",
+        "<strong>Study Region:</strong> ",  df_nccsr$study_regi,         "<br/>",
+        "<strong>Component:</strong> ",     df_nccsr$cmecs_sc_category
+      )
+    } else {
+      df_nccsr$popup_content <- paste0(
+        "<strong>MPA Name:</strong> ",      df_nccsr$shortname,          "<br/>",
+        "<strong>Type:</strong> ",          df_nccsr$type,               "<br/>",
+        "<strong>Study Region:</strong> ",  df_nccsr$study_regi
+      )
+    }
+    df_nccsr
+  })
+  
+  
+  # Create reactive NCCSR map
+  output$ncsr_map_output <- renderLeaflet({
+    df_nccsr     <- selected_map_data2_nccsr()
+    pal_nccsr    <- selected_palette_nccsr()
+    choice_nccsr <- input$nccsr_mapchoice_input
+    
+    leaflet(df_nccsr) |> 
+      addProviderTiles(providers$CartoDB.Positron) |> 
+      setView(lng = -123.04444, lat = 38.83528, zoom = 7) |> 
+      addMiniMap(toggleDisplay = TRUE, minimized = FALSE) |> 
+      addPolygons(
+        fillColor   = ~pal_nccsr(get(ifelse(choice=="Substrate","cmecs_sc_category","type"), df_nccsr)),
+        fillOpacity = 0.7,
+        color       = "black",
+        weight      = 0.5,
+        popup       = ~popup_content
+      ) %>%
+      addLegend(
+        position = "topright",
+        pal      = pal_nccsr,
+        values   = if (choice=="Substrate") df_nccsr$cmecs_sc_category else df_nccsr$type,
+        title    = paste(choice, "Within MPAs")
+      )
+  }) 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     # Build sfbsr leaflet map
