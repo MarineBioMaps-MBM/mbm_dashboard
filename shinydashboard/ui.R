@@ -111,7 +111,7 @@ body <- dashboardBody(
             
     ), # END welcome tabItem
     
-    # Statewode tabItem ----
+    # Statewide tabItem ----
     tabItem(tabName = "statewide",
             
             # fluidRow ----

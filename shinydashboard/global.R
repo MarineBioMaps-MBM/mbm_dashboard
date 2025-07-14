@@ -18,7 +18,7 @@ mpas <- sf::st_read(file.path(boundary.dir, "California_Marine_Protected_Areas_[
 
 # Data for NCSR study region
 
-rds.dir <- "/MEDS/MBM/mbm_dashboard/data//rds_files/"
+rds.dir <- "/MEDS/MBM/mbm_dashboard/data/rds_files"
 
 ncsr_substrate <- readRDS(file.path(rds.dir, "ncsr_substrate.rds")) |>
   sf::st_transform('+proj=latlong +datum=WGS84')
